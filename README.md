@@ -124,7 +124,7 @@ This project involves analyzing a C program through various passes to generate a
 
 Compile file into llvm IR format with no optimizations
 ```bash
-clang -emit-llvm -S -O0 file.c -o file.ll
+clang -emit-llvm -S -g -O0 test-files/example1.c -o test-files/example1.ll
 ```
 
 Print all passes that are registered to the LLVM
