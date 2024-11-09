@@ -327,6 +327,7 @@ FUNCTION_ALIAS_ANALYSIS("tbaa", TypeBasedAA())
 #define FUNCTION_PASS(NAME, CREATE_PASS)
 #endif
 FUNCTION_PASS("input-analysis", InputAnalysisPass())
+FUNCTION_PASS("key-point-analysis", KeyPointAnalysisPass())
 FUNCTION_PASS("aa-eval", AAEvaluator())
 FUNCTION_PASS("adce", ADCEPass())
 FUNCTION_PASS("add-discriminators", AddDiscriminatorsPass())

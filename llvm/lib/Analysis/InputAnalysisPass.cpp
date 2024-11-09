@@ -17,18 +17,23 @@ void InputAnalysisPass::analyzeFunction(Function &F) {
             if (CallInst *CI = dyn_cast<CallInst>(&I)) {
                 Function *calledFunc = CI->getCalledFunction();
                 if (!calledFunc) continue;
-                
+
                 StringRef funcName = calledFunc->getName();
                 if (isInputFunction(funcName)) {
+                    // Get line number
+                    int line = -1;
                     if (DILocation *Loc = I.getDebugLoc()) {
-                        int line = Loc->getLine();
-                        // errs() << "Line " << line << ": " << funcName << "\n";
-                        if (funcName == "__isoc99_scanf")
-                            errs() << "Found an input function: scanf at Line " << line << "\n";
-                        else
-                            errs() << "Found an input function: " << funcName << " at Line " << line << "\n";
-                    } else {
-                        errs() << "Found an input function: " << funcName << " with no debug location.\n";
+                        line = Loc->getLine();
+                    }
+
+                    // Store function name and line number
+                    inputInstructions.emplace_back(line, funcName.str());
+
+                    // Debug output for verification
+                    if (funcName == "__isoc99_scanf")
+                        errs() << "Found input function: scanf at Line " << line << "\n";
+                    else {
+                        errs() << "Found input function: " << funcName << " at Line " << line << "\n";
                     }
                 }
             }
