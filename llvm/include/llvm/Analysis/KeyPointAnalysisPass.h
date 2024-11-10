@@ -10,7 +10,7 @@ namespace llvm {
 // Struct to store information about each key point in the code
 struct KeyPointInfo {
     int line;
-    std::string type;  // "branch" for conditional branches, "func_ptr_call" for function pointer calls
+    std::string type;  // "branch" for conditional branches, "loop" for loops, "switch" for switch statements, "func_ptr_call" for function pointer calls
 
     KeyPointInfo(int l, const std::string &t) : line(l), type(t) {}
 };
@@ -35,3 +35,4 @@ private:
 } // namespace llvm
 
 #endif // LLVM_ANALYSIS_KEYPOINTANALYSISPASS_H
+

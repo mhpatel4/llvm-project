@@ -15,20 +15,34 @@ PreservedAnalyses KeyPointAnalysisPass::run(Function &F, FunctionAnalysisManager
 void KeyPointAnalysisPass::analyzeFunction(Function &F) {
     for (BasicBlock &BB : F) {
         for (Instruction &I : BB) {
-            // Check for conditional branching instructions
+            // Detect conditional branches (if-else and loop conditions)
             if (BranchInst *brInst = dyn_cast<BranchInst>(&I)) {
                 if (brInst->isConditional()) {
                     int line = -1;
                     if (DILocation *Loc = I.getDebugLoc()) {
                         line = Loc->getLine();
                     }
-                    keyPoints.emplace_back(line, "branch");
+                    
+                    // Check if this branch is part of a loop
+                    std::string type = "branch";
+                    if (BB.getSinglePredecessor() && BB.getSinglePredecessor() == &BB) {
+                        type = "loop";
+                    }
 
-                    // Debug output for tracking
-                    errs() << "Found conditional branch at Line " << line << "\n";
+                    keyPoints.emplace_back(line, type);
+                    errs() << "Found conditional " << type << " at Line " << line << "\n";
                 }
             }
-            // Check for calls through function pointers
+            // Detect switch statements
+            else if (isa<SwitchInst>(&I)) {
+                int line = -1;
+                if (DILocation *Loc = I.getDebugLoc()) {
+                    line = Loc->getLine();
+                }
+                keyPoints.emplace_back(line, "switch");
+                errs() << "Found switch statement at Line " << line << "\n";
+            }
+            // Detect calls through function pointers
             else if (CallInst *callInst = dyn_cast<CallInst>(&I)) {
                 // If it's not a direct function call (function pointer call)
                 if (!callInst->getCalledFunction()) {
@@ -38,7 +52,6 @@ void KeyPointAnalysisPass::analyzeFunction(Function &F) {
                     }
                     keyPoints.emplace_back(line, "func_ptr_call");
 
-                    // Debug output for tracking
                     errs() << "Found function pointer call at Line " << line << "\n";
                 }
             }
