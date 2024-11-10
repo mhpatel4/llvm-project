@@ -35,4 +35,3 @@ private:
 } // namespace llvm
 
 #endif // LLVM_ANALYSIS_KEYPOINTANALYSISPASS_H
-
