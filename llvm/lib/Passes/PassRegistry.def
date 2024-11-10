@@ -328,6 +328,7 @@ FUNCTION_ALIAS_ANALYSIS("tbaa", TypeBasedAA())
 #endif
 FUNCTION_PASS("input-analysis", InputAnalysisPass())
 FUNCTION_PASS("key-point-analysis", KeyPointAnalysisPass())
+FUNCTION_PASS("influence-analysis", InfluenceAnalysisPass())
 FUNCTION_PASS("aa-eval", AAEvaluator())
 FUNCTION_PASS("adce", ADCEPass())
 FUNCTION_PASS("add-discriminators", AddDiscriminatorsPass())
