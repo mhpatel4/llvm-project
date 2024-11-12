@@ -27,7 +27,7 @@ public:
     const std::vector<KeyPointInfo> &getKeyPoints() const { return keyPoints; }
 
 private:
-    void analyzeFunction(Function &F);
+    void analyzeFunction(Function &F, FunctionAnalysisManager &FAM);
 
     std::vector<KeyPointInfo> keyPoints;
 };

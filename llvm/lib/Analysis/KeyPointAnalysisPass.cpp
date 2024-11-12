@@ -3,16 +3,21 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Pass.h"
 
 using namespace llvm;
 
 PreservedAnalyses KeyPointAnalysisPass::run(Function &F, FunctionAnalysisManager &FAM) {
     // Analyze the function for key control points
-    analyzeFunction(F);
+    analyzeFunction(F, FAM);
     return PreservedAnalyses::all();
 }
 
-void KeyPointAnalysisPass::analyzeFunction(Function &F) {
+void KeyPointAnalysisPass::analyzeFunction(Function &F, FunctionAnalysisManager &FAM) {
+    // Fetch LoopInfo for loop detection
+    LoopInfo &LI = FAM.getResult<LoopAnalysis>(F);
+
     for (BasicBlock &BB : F) {
         for (Instruction &I : BB) {
             // Detect conditional branches (if-else and loop conditions)
@@ -22,10 +27,11 @@ void KeyPointAnalysisPass::analyzeFunction(Function &F) {
                     if (DILocation *Loc = I.getDebugLoc()) {
                         line = Loc->getLine();
                     }
-                    
-                    // Check if this branch is part of a loop
+
                     std::string type = "branch";
-                    if (BB.getSinglePredecessor() && BB.getSinglePredecessor() == &BB) {
+
+                    // Check if this branch is part of a loop
+                    if (LI.isLoopHeader(&BB)) {
                         type = "loop";
                     }
 
@@ -44,14 +50,12 @@ void KeyPointAnalysisPass::analyzeFunction(Function &F) {
             }
             // Detect calls through function pointers
             else if (CallInst *callInst = dyn_cast<CallInst>(&I)) {
-                // If it's not a direct function call (function pointer call)
-                if (!callInst->getCalledFunction()) {
+                if (!callInst->getCalledFunction()) { // Indirect call (function pointer)
                     int line = -1;
                     if (DILocation *Loc = I.getDebugLoc()) {
                         line = Loc->getLine();
                     }
                     keyPoints.emplace_back(line, "func_ptr_call");
-
                     errs() << "Found function pointer call at Line " << line << "\n";
                 }
             }
