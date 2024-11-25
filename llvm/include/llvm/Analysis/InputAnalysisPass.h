@@ -11,24 +11,24 @@ namespace llvm {
 struct InputInfo {
     int line;
     std::string funcName;
-
-    InputInfo(int l, const std::string &fn) : line(l), funcName(fn) {}
+    
+    InputInfo(int l, const std::string &fn)
+        : line(l), funcName(fn) {}    
 };
 
 class InputAnalysisPass : public PassInfoMixin<InputAnalysisPass> {
 public:
-    // Analyzes function for calls to specific I/O-related functions
-    PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM);
-    
+    // Analyzes the module for calls to specific I/O-related functions
+    PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
+
     static llvm::StringRef name() { return "InputAnalysisPass"; }
-    static bool isRequired() { return true; }
 
     // Getter to retrieve collected input information
     const std::vector<InputInfo> &getInputInfo() const { return inputInstructions; }
 
 private:
     bool isInputFunction(llvm::StringRef funcName);
-    void analyzeFunction(llvm::Function &F);
+    void analyzeModule(Module &M);
 
     std::vector<InputInfo> inputInstructions;
 };

@@ -7,23 +7,25 @@
 #include "llvm/Analysis/KeyPointAnalysisPass.h"
 #include <vector>
 #include <set>
+#include <string>
+#include <map>
 
 namespace llvm {
 
 class InfluenceAnalysisPass : public PassInfoMixin<InfluenceAnalysisPass> {
 public:
-    PreservedAnalyses run(Function &F, FunctionAnalysisManager &FAM);
+    PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
 
     static llvm::StringRef name() { return "InfluenceAnalysisPass"; }
-    static bool isRequired() { return true; }
 
 private:
-    bool isKeyPointInfluencedByInput(const KeyPointInfo &keyPoint, 
-                                     const Function &F, 
-                                     const std::vector<InputInfo> &inputInfo);
-
-    // Helper function to recursively analyze def-use chains for influence
-    bool isValueInfluencedByInput(const Value *V, const std::set<const Value *> &inputValues, std::set<const Value *> &visited);
+    bool backwardSlicing(Value *V, std::set<Value *> &visited, std::vector<Value *> &path,
+                         const std::set<Value *> &inputValues);
+    void printValueInfo(Value *V);
+    void collectInputValues(const std::vector<InputInfo> &inputInfo,
+                            std::multimap<int, Instruction *> &lineToInstructionMap,
+                            std::set<Value *> &inputValues);
+    bool isInputFunction(StringRef funcName);
 };
 
 } // namespace llvm
