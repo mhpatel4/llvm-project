@@ -2,12 +2,6 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/SmallVector.h"
-#include <unordered_set>
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/IntrinsicInst.h"
 
 using namespace llvm;
 
@@ -31,7 +25,6 @@ void InputAnalysisPass::analyzeModule(Module &M) {
                         if (DILocation *Loc = I.getDebugLoc()) {
                             line = Loc->getLine();
                         }
-                        
                         inputInstructions.emplace_back(line, funcName.str());
                     }
                 }

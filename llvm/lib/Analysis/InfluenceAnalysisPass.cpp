@@ -45,7 +45,11 @@ PreservedAnalyses InfluenceAnalysisPass::run(Module &M, ModuleAnalysisManager &M
     // Debug output: Print information stored in inputInfo with arguments
     errs() << "Input Functions Identified:\n";
     for (const auto &input : inputInfo) {
-        errs() << "  - Found input function: " << input.funcName << " at Line " << input.line << ".";
+        if (input.funcName == "__isoc99_scanf") {
+            errs() << "  - Found input function: scanf at Line " << input.line << ".";
+        } else {
+            errs() << "  - Found input function: " << input.funcName << " at Line " << input.line << ".";
+        }
         errs() << "\n";
     }
 

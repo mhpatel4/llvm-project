@@ -7,7 +7,6 @@
 
 namespace llvm {
 
-// Struct to store information about each key point in the code
 struct KeyPointInfo {
     int line;
     std::string type;
@@ -17,14 +16,13 @@ struct KeyPointInfo {
 
 class KeyPointAnalysisPass : public PassInfoMixin<KeyPointAnalysisPass> {
 public:
-    // Analyzes the module to identify key control points
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
 
     static llvm::StringRef name() { return "KeyPointAnalysisPass"; }
 
-    // Getter to retrieve collected key point information
     const std::vector<KeyPointInfo> &getKeyPoints() const { return keyPoints; }
 
+    static bool isRequired() { return true; }
 private:
     void analyzeModule(Module &M, ModuleAnalysisManager &MAM);
 
