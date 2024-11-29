@@ -3,10 +3,11 @@ source_filename = "test-files/example3.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@.str = private unnamed_addr constant [17 x i8] c"Enter a number: \00", align 1
-@.str.1 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@.str = private unnamed_addr constant [69 x i8] c"Enter the number of iterations and the initial count (e.g., '5 0'): \00", align 1
+@.str.1 = private unnamed_addr constant [6 x i8] c"%d %d\00", align 1
 @.str.2 = private unnamed_addr constant [33 x i8] c"Enter a number to add to count: \00", align 1
-@.str.3 = private unnamed_addr constant [17 x i8] c"Total count: %d\0A\00", align 1
+@.str.3 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@.str.4 = private unnamed_addr constant [17 x i8] c"Total count: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 !dbg !10 {
@@ -21,8 +22,8 @@ define dso_local i32 @main() #0 !dbg !10 {
   call void @llvm.dbg.declare(metadata i32* %4, metadata !19, metadata !DIExpression()), !dbg !20
   call void @llvm.dbg.declare(metadata i32* %5, metadata !21, metadata !DIExpression()), !dbg !22
   store i32 0, i32* %5, align 4, !dbg !22
-  %6 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([17 x i8], [17 x i8]* @.str, i64 0, i64 0)), !dbg !23
-  %7 = call i32 (i8*, ...) @__isoc99_scanf(i8* noundef getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1, i64 0, i64 0), i32* noundef %2), !dbg !24
+  %6 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([69 x i8], [69 x i8]* @.str, i64 0, i64 0)), !dbg !23
+  %7 = call i32 (i8*, ...) @__isoc99_scanf(i8* noundef getelementptr inbounds ([6 x i8], [6 x i8]* @.str.1, i64 0, i64 0), i32* noundef %2, i32* noundef %5), !dbg !24
   store i32 0, i32* %3, align 4, !dbg !25
   br label %8, !dbg !27
 
@@ -34,7 +35,7 @@ define dso_local i32 @main() #0 !dbg !10 {
 
 12:                                               ; preds = %8
   %13 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([33 x i8], [33 x i8]* @.str.2, i64 0, i64 0)), !dbg !33
-  %14 = call i32 (i8*, ...) @__isoc99_scanf(i8* noundef getelementptr inbounds ([3 x i8], [3 x i8]* @.str.1, i64 0, i64 0), i32* noundef %4), !dbg !35
+  %14 = call i32 (i8*, ...) @__isoc99_scanf(i8* noundef getelementptr inbounds ([3 x i8], [3 x i8]* @.str.3, i64 0, i64 0), i32* noundef %4), !dbg !35
   %15 = load i32, i32* %4, align 4, !dbg !36
   %16 = load i32, i32* %5, align 4, !dbg !37
   %17 = add nsw i32 %16, %15, !dbg !37
@@ -49,7 +50,7 @@ define dso_local i32 @main() #0 !dbg !10 {
 
 21:                                               ; preds = %8
   %22 = load i32, i32* %5, align 4, !dbg !44
-  %23 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([17 x i8], [17 x i8]* @.str.3, i64 0, i64 0), i32 noundef %22), !dbg !45
+  %23 = call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([17 x i8], [17 x i8]* @.str.4, i64 0, i64 0), i32 noundef %22), !dbg !45
   ret i32 0, !dbg !46
 }
 
@@ -69,7 +70,7 @@ attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !llvm.ident = !{!9}
 
 !0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "Ubuntu clang version 14.0.0-1ubuntu1.1", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
-!1 = !DIFile(filename: "test-files/example3.c", directory: "/home/mhpatel4/repos/llvm-project", checksumkind: CSK_MD5, checksum: "bd66208739d9dbd037ea5fd44340fae1")
+!1 = !DIFile(filename: "test-files/example3.c", directory: "/home/mhpatel4/repos/llvm-project", checksumkind: CSK_MD5, checksum: "4713bedb80ffb22f74e7a2d62feae4c4")
 !2 = !{i32 7, !"Dwarf Version", i32 5}
 !3 = !{i32 2, !"Debug Info Version", i32 3}
 !4 = !{i32 1, !"wchar_size", i32 4}
