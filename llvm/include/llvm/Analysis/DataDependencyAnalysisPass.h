@@ -19,13 +19,6 @@ struct SeminalFeature {
     std::vector<AllocaInst*> inputAllocas;
 };
 
-// Struct used in the dbgDeclareToVarMap to store information related to each dbg.declare in LLVM IR. Step 1 of Pass.
-struct dbgObj {
-    std::string ptrValue;
-    std::string varName;
-    std::string scope;
-};
-
 class DataDependencyAnalysisPass : public PassInfoMixin<DataDependencyAnalysisPass> {
 public:
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
@@ -45,16 +38,7 @@ private:
     void traceDependency(Value *V, std::unordered_set<Value*> &visited, std::vector<AllocaInst*> &inputAllocas);
 
     // Helper function to collect input Allocas from InputAnalysisPass
-    std::unordered_map<AllocaInst*, std::string> collectInputAllocas(Module &M, ModuleAnalysisManager &MAM, const std::vector<InputInfo> &inputs);
-
-    // Helper function to find all scopes of Functions from LLVM IR
-    std::unordered_map<std::string, std::string> findFunctionScopes(Module &M, ModuleAnalysisManager &MAM);
-
-    //Helper function to find all variable names, their scopes, and virtual register from LLVM IR
-    std::unordered_map<std::string, dbgObj> findVariableNamesAndScope(Module &M, ModuleAnalysisManager &MAM);
-
-    //Helper function to map block scope to the scope of the function it is contained in
-    //std::unordered_map<std::string, dbgObj> findFunctionScopeFromBlock(Module &M, ModuleAnalysisManager &MAM)
+    // std::unordered_map<AllocaInst*, std::string> collectInputAllocas(Module &M, ModuleAnalysisManager &MAM, const std::vector<InputInfo> &inputs);
 };
 
 } // namespace llvm

@@ -10,8 +10,7 @@ namespace llvm {
 struct KeyPointInfo {
     int line;
     std::string type;
-
-    KeyPointInfo(int l, const std::string &t) : line(l), type(t) {}
+    KeyPointInfo(int l, const std::string &t) : line(l), type(t){}
 };
 
 class KeyPointAnalysisPass : public PassInfoMixin<KeyPointAnalysisPass> {

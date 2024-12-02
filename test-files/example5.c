@@ -10,7 +10,7 @@ int (*getComparator(char type))(int, int);
 int main() {
     int option;
     char buffer[100];
-    FILE *fp;
+    FILE *fp, *outputFile;
 
     // Input function: scanf (reads user option)
     printf("Enter option (1: processData, 2: compareInts): ");
@@ -19,16 +19,24 @@ int main() {
     // Input function: fopen (opens a file)
     fp = fopen("input.txt", "r");
     if (fp == NULL) {
-        perror("Failed to open file");
+        perror("Failed to open input file");
+        return 1;
+    }
+
+    // Output function: fopen (opens an output file)
+    outputFile = fopen("output.txt", "w");
+    if (outputFile == NULL) {
+        perror("Failed to open output file");
+        fclose(fp);
         return 1;
     }
 
     // Input function: getc (reads a character from file)
     char ch = getc(fp);
     if (ch == EOF) {
-        printf("Empty file.\n");
+        fprintf(outputFile, "Empty file.\n");
     } else {
-        printf("First character: %c\n", ch);
+        fprintf(outputFile, "First character: %c\n", ch);
     }
 
     // Determine file size using fseek and ftell
@@ -41,7 +49,13 @@ int main() {
         char *fileContent = (char*)malloc(fileSize + 1);
         size_t bytesRead = fread(fileContent, sizeof(char), fileSize, fp);
         fileContent[bytesRead] = '\0';
+
         printf("File content (%ld bytes): %s\n", fileSize, fileContent);
+
+        // Output function: fwrite (writes file information to output file)
+        fwrite(&fileSize, sizeof(long), 1, outputFile); // Write file size
+        fwrite(fileContent, sizeof(char), bytesRead, outputFile); // Write file content
+
         free(fileContent);
     }
 
@@ -75,8 +89,9 @@ int main() {
         printf("Invalid option.\n");
     }
 
-    // Close the file
+    // Close the files
     fclose(fp);
+    fclose(outputFile);
     return 0;
 }
 
