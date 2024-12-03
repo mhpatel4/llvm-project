@@ -66,12 +66,18 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
     }
     errs() << "\n";
 
+    std::unordered_set<std::string> relevantTypes = {"loop", "func_ptr_call"};
+
     for (const auto &keyPoint : keyPoints) {
+        if (relevantTypes.find(keyPoint.type) == relevantTypes.end()) {
+            continue; // Skip non-relevant keypoints
+        }
+
         Instruction *keyInst = keyPoint.inst;
         if (!keyInst) continue; // Safety check
         
         // Debug information
-        errs() << "Analyzing Keypoint Instruction:\n";
+        errs() << "Analyzing Keypoint Instruction at Line:" << keyPoint.line << "\n";
         keyInst->print(llvm::errs());
         errs() << "\nOperands and Dependencies:\n";
 
@@ -123,10 +129,10 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Value* val, std::unord
     }
 }
 
-std::string DataDependencyAnalysisPass::getValueString(Value *val) {
-    std::string str;
-    raw_string_ostream rso(str);
-    val->printAsOperand(rso, false);
-    rso.flush();
-    return str;
-}
+// std::string DataDependencyAnalysisPass::getValueString(Value *val) {
+//     std::string str;
+//     raw_string_ostream rso(str);
+//     val->printAsOperand(rso, false);
+//     rso.flush();
+//     return str;
+// }

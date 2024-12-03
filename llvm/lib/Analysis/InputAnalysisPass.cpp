@@ -172,9 +172,12 @@ std::unordered_map<std::string, dbgObj> InputAnalysisPass::findVariableNamesAndS
 
     while (std::getline(stream, line)) { 
         if (line.find("dbg_declare") != std::string::npos) 
-            { dbgDeclareLines.push_back(line);
-        }
+            { 
+                dbgDeclareLines.push_back(line);
+                // errs() << line << "\n";
+            }
     }
+    // errs() << "\n";
 
     std::unordered_map<std::string, dbgObj> dbgDeclareToVarMap;
 
@@ -195,7 +198,7 @@ std::unordered_map<std::string, dbgObj> InputAnalysisPass::findVariableNamesAndS
         std::string metadataID = dbgLine.substr(metaStartPos, metaEndPos - metaStartPos);
 
         std::string debugLine;
-        std::string metadataIDSearch = metadataID + " = !";  // Create search pattern for matching the metadataID
+        std::string metadataIDSearch = "!" + metadataID + " = !";  // Create search pattern for matching the metadataID
 
         // Reset the stream to start from the beginning again to find the metadata match
         stream.clear();
@@ -220,7 +223,7 @@ std::unordered_map<std::string, dbgObj> InputAnalysisPass::findVariableNamesAndS
                 }
             
                 std::string varName = debugLine.substr(nameStartPos, nameEndPos - nameStartPos);
-            
+
                 // Extract the scope identifier
                 std::size_t scopeStartPos = debugLine.find("scope: !");
                 if (scopeStartPos == std::string::npos) {
@@ -245,6 +248,8 @@ std::unordered_map<std::string, dbgObj> InputAnalysisPass::findVariableNamesAndS
                 newEntry.scope = scope;
             
                 // Insert the newEntry into the map with metadataIDSearch as the key
+                // errs() << "Name: " << varName << " with MetaID: " << metadataIDSearch << "\n";
+
                 dbgDeclareToVarMap[metadataIDSearch] = newEntry;
             }
         }
