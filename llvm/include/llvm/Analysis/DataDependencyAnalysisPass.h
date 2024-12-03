@@ -13,32 +13,18 @@
 
 namespace llvm {
 
-// Struct to store seminal input features for each key point
-struct SeminalFeature {
-    int keyPointLine;
-    std::vector<AllocaInst*> inputAllocas;
-};
-
 class DataDependencyAnalysisPass : public PassInfoMixin<DataDependencyAnalysisPass> {
 public:
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
 
     static llvm::StringRef name() { return "DataDependencyAnalysisPass"; }
 
-    const std::vector<SeminalFeature> &getSeminalFeatures() const { return seminalFeatures; }
-
     static bool isRequired() { return true; }
 
 private:
     void analyzeDependencies(Module &M, ModuleAnalysisManager &MAM);
-
-    std::vector<SeminalFeature> seminalFeatures;
-
-    // Helper function to trace dependencies from a Value to input Allocas
-    void traceDependency(Value *V, std::unordered_set<Value*> &visited, std::vector<AllocaInst*> &inputAllocas);
-
-    // Helper function to collect input Allocas from InputAnalysisPass
-    // std::unordered_map<AllocaInst*, std::string> collectInputAllocas(Module &M, ModuleAnalysisManager &MAM, const std::vector<InputInfo> &inputs);
+    void printDefiningInstruction(Value* val, std::unordered_set<Value*> &visited, int depth = 0, int maxDepth = 10);
+    std::string getValueString(Value *val);
 };
 
 } // namespace llvm

@@ -30,13 +30,13 @@ void KeyPointAnalysisPass::analyzeModule(Module &M, ModuleAnalysisManager &MAM) 
                 if (BranchInst *brInst = dyn_cast<BranchInst>(&I)) {
                     if (brInst->isConditional()) {
                         std::string type = LI.isLoopHeader(&BB) ? "loop" : "branch";
-                        keyPoints.emplace_back(line, type);
+                        keyPoints.emplace_back(line, type, brInst);
                     }
-                } else if (isa<SwitchInst>(&I)) {
-                    keyPoints.emplace_back(line, "switch");
+                } else if (SwitchInst *swInst = dyn_cast<SwitchInst>(&I)) {
+                    keyPoints.emplace_back(line, "switch", swInst);
                 } else if (CallInst *callInst = dyn_cast<CallInst>(&I)) {
                     if (!callInst->getCalledFunction()) {
-                        keyPoints.emplace_back(line, "func_ptr_call");
+                        keyPoints.emplace_back(line, "func_ptr_call", callInst);
                     }
                 }
             }

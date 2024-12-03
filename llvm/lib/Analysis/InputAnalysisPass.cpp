@@ -2,17 +2,13 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/raw_ostream.h"
 #include <set>
 #include <vector>
 #include "llvm/IR/DebugInfo.h"
-#include <queue>
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Transforms/Utils/Local.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Metadata.h"
 #include <unordered_set>
 #include <sstream>
 #include <regex>
@@ -22,7 +18,7 @@ using namespace llvm;
 PreservedAnalyses InputAnalysisPass::run(Module &M, ModuleAnalysisManager &MAM) {
     analyzeModule(M);
 
-    CreateVarNameToFuncScope(M, MAM);
+    varNameInformation = CreateVarNameToFuncScope(M, MAM);
     return PreservedAnalyses::all();
 }
 
@@ -41,17 +37,12 @@ void InputAnalysisPass::analyzeModule(Module &M) {
                         if (DILocation *Loc = I.getDebugLoc()) {
                             line = Loc->getLine();
                         }
-                        errs() << "Input on Line: " << line << ": Function Name: " << funcName <<"\n";
-                        errs() << "  ";
-                        CI->print(llvm::errs());
-                        errs() << "\n";
                         inputInstructions.emplace_back(line, funcName.str(), CI);
                     }
                 }
             }
         }
     }
-    errs() << "\n";
 }
 
 bool InputAnalysisPass::isInputFunction(StringRef funcName) {
@@ -61,44 +52,15 @@ bool InputAnalysisPass::isInputFunction(StringRef funcName) {
            funcName == "fwrite";
 }
 
-void InputAnalysisPass::CreateVarNameToFuncScope(Module &M, ModuleAnalysisManager &MAM) {
+std::unordered_map<std::string, dbgObj> InputAnalysisPass::CreateVarNameToFuncScope(Module &M, ModuleAnalysisManager &MAM) {
     // Step 0: Get all function names and associated scopes
     std::unordered_map<std::string, std::string> functionScopes = findFunctionScopes(M, MAM);
-
-    // Debug Information for function and scope
-    // errs() << "Content of functionScopes:\n";
-    // for (const auto &entry : functionScopes) {
-    //     std::string funcName = entry.second;
-    //     std::string scope = entry.first;
-
-    //     // Print the AllocaInst pointer (you can use its name or just its address)
-    //     errs() << "Function name: " << funcName << " with scope: " << scope << "\n";
-    // }
-    // errs() << "\n";
 
     // Step 1: map all blocks scopes to function scopes
     std::unordered_map<std::string, std::string> blockMapping = findFunctionScopeFromBlock(M, MAM);
 
-    // Debug Information for mapping scopes of blocks
-    // errs() << "blockMapping contents:\n";
-    // for (const auto& entry : blockMapping) {
-
-    //     errs() << "Block scope: " << entry.first << " is mapped to : " << entry.second << "\n";
-    // }
-    // errs() << "\n";
-
     // Step 2: get the variable name, metadataid, pointer value, and scope of each DiLocalVariable
     std::unordered_map<std::string, dbgObj> varNameAndScope = findVariableNamesAndScope(M, MAM);
-
-    // Debug Information of DiLocalVariables and scopes which may be blocks
-    // errs() << "varNameAndScope contents:\n";
-    // for (const auto &entry : varNameAndScope) {
-    //     const std::string &dbgDeclareLine = entry.first;
-    //     const dbgObj &obj = entry.second;
-
-    //     errs() << "dbg_declare line: " << dbgDeclareLine << ", Variable name: " << obj.varName << ", Pointer value: " << obj.ptrValue << ", Scope is: " << obj.scope << "\n";
-    // }
-    // errs() << "\n";
 
     // Step 3: update scopes of DiLocalVariables if they are for blocks to the functions they represent
     for (auto& [key, obj] : varNameAndScope) {
@@ -113,13 +75,15 @@ void InputAnalysisPass::CreateVarNameToFuncScope(Module &M, ModuleAnalysisManage
     }
 
     // Check if variable scopes are updated from block to function
-    errs() << "varNameAndScope contents after using blockMapping to get scopes of functions:\n";
-    for (const auto &entry : varNameAndScope) {
-        const dbgObj &obj = entry.second;
+    // errs() << "varNameAndScope contents after using blockMapping to get scopes of functions:\n";
+    // for (const auto &entry : varNameAndScope) {
+    //     const dbgObj &obj = entry.second;
         
-        errs() << "Variable name: " << obj.varName << " , Pointer value: " << obj.ptrValue << " , Scope: " << obj.scope << " , Function : " << obj.funcName <<"\n";
-    }   
-    errs() << "\n";
+    //     errs() << "Variable name: " << obj.varName << " , Pointer value: " << obj.ptrValue << " , Scope: " << obj.scope << " , Function : " << obj.funcName <<"\n";
+    // }   
+    // errs() << "\n";
+
+    return varNameAndScope;
 }
 
 //Extract function names and associated scope ID
@@ -261,7 +225,7 @@ std::unordered_map<std::string, dbgObj> InputAnalysisPass::findVariableNamesAndS
                 std::size_t scopeStartPos = debugLine.find("scope: !");
                 if (scopeStartPos == std::string::npos) {
                     // "scope: !" not found; handle accordingly (e.g., assign a default value or skip)
-                    llvm::errs() << "Warning: 'scope: !' not found in line: " << debugLine << "\n";
+                    // llvm::errs() << "Warning: 'scope: !' not found in line: " << debugLine << "\n";
                     continue; // Skip this line or handle as per your requirements
                 }
                 scopeStartPos += 7; // Move past "scope: !"

@@ -4,13 +4,17 @@
 #include "llvm/IR/PassManager.h"
 #include <string>
 #include <vector>
+#include "llvm/IR/Instructions.h"
 
 namespace llvm {
 
 struct KeyPointInfo {
     int line;
     std::string type;
-    KeyPointInfo(int l, const std::string &t) : line(l), type(t){}
+    Instruction* inst;
+
+    KeyPointInfo(int l, const std::string &t, Instruction* i)
+        : line(l), type(t), inst(i) {}
 };
 
 class KeyPointAnalysisPass : public PassInfoMixin<KeyPointAnalysisPass> {

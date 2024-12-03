@@ -4,20 +4,13 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/PassManager.h"
-#include "llvm/Support/raw_ostream.h"
 #include <set>
 #include <vector>
 #include "llvm/IR/DebugInfo.h"
-#include <queue>
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/Transforms/Utils/Local.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Metadata.h"
 #include <unordered_set>
-#include <sstream>
-#include <regex>
 
 namespace llvm {
 
@@ -47,6 +40,8 @@ public:
     const std::vector<InputInfo> &getInputInfo() const { return inputInstructions; }
 
     static bool isRequired() { return true; }
+
+    std::unordered_map<std::string, dbgObj> varNameInformation;
 private:
     bool isInputFunction(llvm::StringRef funcName);
     void analyzeModule(Module &M);
@@ -55,7 +50,7 @@ private:
 
     void printInstructionUsers(Instruction *inst, std::unordered_set<const Instruction*> &visited);
     
-    void CreateVarNameToFuncScope(Module &M, ModuleAnalysisManager &MAM);
+    std::unordered_map<std::string, dbgObj> CreateVarNameToFuncScope(Module &M, ModuleAnalysisManager &MAM);
 
     // Helper function to find all scopes of Functions from LLVM IR
     std::unordered_map<std::string, std::string> findFunctionScopes(Module &M, ModuleAnalysisManager &MAM);
