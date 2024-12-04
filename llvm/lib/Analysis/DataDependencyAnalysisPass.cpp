@@ -86,14 +86,14 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
         // Traverse each operand of the keypoint instruction
         for (unsigned i = 0; i < keyInst->getNumOperands(); ++i) {
             Value* operand = keyInst->getOperand(i);
-            printDefiningInstruction(varNameAndScope, funcName, operand, visited);
+            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited);
         }
 
         errs() << "\n";
     }
 }
 
-void DataDependencyAnalysisPass::printDefiningInstruction(const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth, int maxDepth) {
+void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnalysisManager &MAM, const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth, int maxDepth) {
     if (depth > maxDepth || !val || visited.find(val) != visited.end())
         return;
 
@@ -129,7 +129,8 @@ void DataDependencyAnalysisPass::printDefiningInstruction(const std::unordered_m
             rso.flush();
 
             std::size_t startPos = printedStr.find("%");
-            std::size_t endPos = printedStr.find("=") - 1;
+            std::size_t equalPos = printedStr.find(" = ");
+            std::size_t endPos = (equalPos != std::string::npos) ? equalPos : printedStr.length();
             printedStr = printedStr.substr(startPos, endPos - startPos);
 
             std::string varName;
@@ -138,13 +139,33 @@ void DataDependencyAnalysisPass::printDefiningInstruction(const std::unordered_m
                 if (obj.ptrValue == printedStr && funcName == obj.funcName) {
                     errs() << "       " << printedStr << " with variable name: " << obj.varName << "\n";
                 }
-            }   
+            }
+        }
+
+        // If it's a LoadInst, find corresponding StoreInst(s)
+        if (LoadInst* loadInst = dyn_cast<LoadInst>(defInst)) {
+            Value* pointer = loadInst->getPointerOperand();
+            // Iterate over all instructions in the module to find stores to this pointer
+            for (Function &F : M) {
+                for (BasicBlock &BB : F) {
+                    for (Instruction &I : BB) {
+                        if (StoreInst* storeInst = dyn_cast<StoreInst>(&I)) {
+                            if (storeInst->getPointerOperand() == pointer) {
+                                Value* storedValue = storeInst->getValueOperand();
+                                // errs() << "       Dependency via Store Instruction:\n";
+                                // Recursively traverse the stored value
+                                printDefiningInstruction(M, MAM, varNameAndScope, funcName, storedValue, visited, depth + 1, maxDepth);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Recursively traverse the operands of the defining instruction
         for (unsigned i = 0; i < defInst->getNumOperands(); ++i) {
             Value* operand = defInst->getOperand(i);
-            printDefiningInstruction(varNameAndScope, funcName, operand, visited, depth + 1);
+            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited, depth + 1, maxDepth);
         }
     }
 }
