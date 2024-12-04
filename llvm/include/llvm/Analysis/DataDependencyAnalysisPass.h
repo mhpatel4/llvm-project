@@ -23,8 +23,7 @@ public:
 
 private:
     void analyzeDependencies(Module &M, ModuleAnalysisManager &MAM);
-    void printDefiningInstruction(Value* val, std::unordered_set<Value*> &visited, int depth = 0, int maxDepth = 10);
-    std::string getValueString(Value *val);
+    void printDefiningInstruction(const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth = 0, int maxDepth = 10);
 };
 
 } // namespace llvm

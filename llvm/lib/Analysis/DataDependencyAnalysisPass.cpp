@@ -66,18 +66,18 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
     }
     errs() << "\n";
 
-    std::unordered_set<std::string> relevantTypes = {"loop", "func_ptr_call"};
+    std::unordered_set<std::string> relevantTypes = {"loop", "func_ptr_call", "branch", "switch"};
 
     for (const auto &keyPoint : keyPoints) {
         if (relevantTypes.find(keyPoint.type) == relevantTypes.end()) {
             continue; // Skip non-relevant keypoints
         }
 
-        Instruction *keyInst = keyPoint.inst;
-        if (!keyInst) continue; // Safety check
-        
+    Instruction *keyInst = keyPoint.inst;
+    if (!keyInst) continue; // Safety check
+        std::string funcName = keyPoint.funcName;
         // Debug information
-        errs() << "Analyzing Keypoint Instruction at Line:" << keyPoint.line << "\n";
+        errs() << "Analyzing Keypoint Instruction at Line:" << keyPoint.line << " in Function: "<< funcName << "\n";
         keyInst->print(llvm::errs());
         errs() << "\nOperands and Dependencies:\n";
 
@@ -86,14 +86,14 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
         // Traverse each operand of the keypoint instruction
         for (unsigned i = 0; i < keyInst->getNumOperands(); ++i) {
             Value* operand = keyInst->getOperand(i);
-            printDefiningInstruction(operand, visited);
+            printDefiningInstruction(varNameAndScope, funcName, operand, visited);
         }
 
         errs() << "\n";
     }
 }
 
-void DataDependencyAnalysisPass::printDefiningInstruction(Value* val, std::unordered_set<Value*> &visited, int depth, int maxDepth) {
+void DataDependencyAnalysisPass::printDefiningInstruction(const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth, int maxDepth) {
     if (depth > maxDepth || !val || visited.find(val) != visited.end())
         return;
 
@@ -121,18 +121,30 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Value* val, std::unord
         defInst->print(llvm::errs());
         errs() << "\n";
 
+        // Check if the instruction is an AllocaInst
+        if (isa<AllocaInst>(defInst)) {
+            std::string printedStr;
+            raw_string_ostream rso(printedStr);
+            defInst->print(rso);
+            rso.flush();
+
+            std::size_t startPos = printedStr.find("%");
+            std::size_t endPos = printedStr.find("=") - 1;
+            printedStr = printedStr.substr(startPos, endPos - startPos);
+
+            std::string varName;
+            for (const auto &entry : varNameAndScope) {
+                const dbgObj &obj = entry.second;
+                if (obj.ptrValue == printedStr && funcName == obj.funcName) {
+                    errs() << "       " << printedStr << " with variable name: " << obj.varName << "\n";
+                }
+            }   
+        }
+
         // Recursively traverse the operands of the defining instruction
         for (unsigned i = 0; i < defInst->getNumOperands(); ++i) {
             Value* operand = defInst->getOperand(i);
-            printDefiningInstruction(operand, visited, depth + 1, maxDepth);
+            printDefiningInstruction(varNameAndScope, funcName, operand, visited, depth + 1);
         }
     }
 }
-
-// std::string DataDependencyAnalysisPass::getValueString(Value *val) {
-//     std::string str;
-//     raw_string_ostream rso(str);
-//     val->printAsOperand(rso, false);
-//     rso.flush();
-//     return str;
-// }

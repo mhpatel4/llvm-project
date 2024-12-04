@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include "llvm/IR/Instructions.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include <unordered_set>
 
 namespace llvm {
 
@@ -12,9 +14,9 @@ struct KeyPointInfo {
     int line;
     std::string type;
     Instruction* inst;
-
-    KeyPointInfo(int l, const std::string &t, Instruction* i)
-        : line(l), type(t), inst(i) {}
+    std::string funcName;
+    KeyPointInfo(int l, const std::string &t, Instruction* i, const std::string &fn)
+        : line(l), type(t), inst(i), funcName(fn){}
 };
 
 class KeyPointAnalysisPass : public PassInfoMixin<KeyPointAnalysisPass> {
@@ -28,6 +30,8 @@ public:
     static bool isRequired() { return true; }
 private:
     void analyzeModule(Module &M, ModuleAnalysisManager &MAM);
+
+    bool influencesRuntime(Instruction &I, LoopInfo &LI);
 
     std::vector<KeyPointInfo> keyPoints;
 };
