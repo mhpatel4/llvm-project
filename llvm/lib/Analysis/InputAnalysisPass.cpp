@@ -48,6 +48,16 @@ void InputAnalysisPass::analyzeModule(Module &M) {
                             }
                         }
 
+                        // Check return value (new behavior)
+                        if (!CI->getType()->isVoidTy()) {
+                            // If the function returns a value, check its users to find associated variables
+                            for (User *user : CI->users()) {
+                                if (StoreInst *storeInst = dyn_cast<StoreInst>(user)) {
+                                    modifiedOperands.push_back(storeInst->getPointerOperand());
+                                }
+                            }
+                        }
+                        
                         inputInstructions.emplace_back(line, funcName.str(), CI);
                         inputInstructions.back().modifiedOperands = modifiedOperands;
                     }

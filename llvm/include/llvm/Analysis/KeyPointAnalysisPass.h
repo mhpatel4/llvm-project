@@ -34,6 +34,10 @@ private:
     bool influencesRuntime(Instruction &I, LoopInfo &LI);
 
     std::vector<KeyPointInfo> keyPoints;
+
+    bool analyzeFunctionPointerInfluence(Module &M, ModuleAnalysisManager &MAM, CallInst *callInst);
+
+    bool traceFunctionPointerInfluence(Module &M, ModuleAnalysisManager &MAM, Value *val, std::unordered_set<Value *> &visited);
 };
 
 } // namespace llvm

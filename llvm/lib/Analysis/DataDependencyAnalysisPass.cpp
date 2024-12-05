@@ -133,8 +133,20 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnaly
         return;
 
     // Handle function arguments
-    if (Argument* arg = dyn_cast<Argument>(val)) {
-        errs() << "  - Function Argument: " << arg->getName() << "\n";
+    if (Argument *arg = dyn_cast<Argument>(val)) {
+        Function *parentFunc = arg->getParent();
+        for (auto &U : parentFunc->uses()) {
+            if (CallInst *callInst = dyn_cast<CallInst>(U.getUser())) {
+                // Update funcName to the caller function's name
+                std::string callerFuncName = callInst->getFunction()->getName().str();
+                errs() << "asdjklasjdlkasjdl- " << callerFuncName << "\n";
+                Value *passedValue = callInst->getArgOperand(arg->getArgNo());
+
+                // Recursively analyze the passed value with updated funcName
+                printDefiningInstruction(M, MAM, varNameAndScope, callerFuncName,
+                                      passedValue, visited, allocaVarPairs, depth + 1, maxDepth);
+            }
+        }
         return;
     }
 

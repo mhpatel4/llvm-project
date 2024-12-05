@@ -45,7 +45,10 @@ void KeyPointAnalysisPass::analyzeModule(Module &M, ModuleAnalysisManager &MAM) 
                     // errs() << "Switch: " << influencesRuntime(I, LI) << " at Line: " << line <<"\n";
                 } else if (CallInst *callInst = dyn_cast<CallInst>(&I)) {
                     if (!callInst->getCalledFunction()) {
-                        keyPoints.emplace_back(line, "func_ptr_call", callInst, funcName);
+                        // Analyze function pointer usage
+                        bool influencesRuntime = analyzeFunctionPointerInfluence(M, MAM, callInst);
+                        std::string type = influencesRuntime ? "func_ptr_call" : "non-critical";
+                        keyPoints.emplace_back(line, type, callInst, funcName);
                     }
                 }
             }
@@ -188,4 +191,36 @@ bool KeyPointAnalysisPass::influencesRuntime(Instruction &I, LoopInfo &LI) {
     }
 
     return false; // Default to non-critical
+}
+
+bool KeyPointAnalysisPass::analyzeFunctionPointerInfluence(Module &M, ModuleAnalysisManager &MAM, CallInst *callInst) {
+    std::unordered_set<Value *> visited;
+    return traceFunctionPointerInfluence(M, MAM, callInst->getCalledOperand(), visited);
+}
+
+bool KeyPointAnalysisPass::traceFunctionPointerInfluence(Module &M, ModuleAnalysisManager &MAM, Value *val, std::unordered_set<Value *> &visited) {
+
+    if (!val || visited.find(val) != visited.end())
+        return false;
+
+    visited.insert(val);
+
+    if (dyn_cast<Argument>(val)) {
+        return true;
+    }
+
+    if (LoadInst *loadInst = dyn_cast<LoadInst>(val)) {
+        Value *pointerOperand = loadInst->getPointerOperand();
+        return traceFunctionPointerInfluence(M, MAM, pointerOperand, visited);
+    }
+
+    if (Instruction *inst = dyn_cast<Instruction>(val)) {
+        for (unsigned i = 0; i < inst->getNumOperands(); ++i) {
+            if (traceFunctionPointerInfluence(M, MAM, inst->getOperand(i), visited)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
