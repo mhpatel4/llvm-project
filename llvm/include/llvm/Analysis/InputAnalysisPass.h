@@ -19,6 +19,7 @@ struct InputInfo {
     int line;
     std::string funcName;
     CallInst * callInst;
+    std::vector<Value *> modifiedOperands;
 
     InputInfo(int l, const std::string &fn, CallInst *CI) : line(l), funcName(fn), callInst(CI) {}
 };

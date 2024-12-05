@@ -13,6 +13,11 @@
 
 namespace llvm {
 
+struct AllocaVarPair {
+    AllocaInst* allocaInst;
+    std::string varName;
+};
+
 class DataDependencyAnalysisPass : public PassInfoMixin<DataDependencyAnalysisPass> {
 public:
     PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM);
@@ -23,7 +28,7 @@ public:
 
 private:
     void analyzeDependencies(Module &M, ModuleAnalysisManager &MAM);
-    void printDefiningInstruction(Module &M, ModuleAnalysisManager &MAM, const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth = 0, int maxDepth = 10);
+    void printDefiningInstruction(Module &M, ModuleAnalysisManager &MAM, const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, std::vector<AllocaVarPair>* allocaVarPairs, int depth = 0, int maxDepth = 10);
 };
 
 } // namespace llvm

@@ -68,14 +68,20 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
 
     std::unordered_set<std::string> relevantTypes = {"loop", "func_ptr_call", "branch", "switch"};
 
+    std::unordered_map<const KeyPointInfo *, std::vector<AllocaVarPair>> keyPointVariables;
     for (const auto &keyPoint : keyPoints) {
         if (relevantTypes.find(keyPoint.type) == relevantTypes.end()) {
             continue; // Skip non-relevant keypoints
         }
 
-    Instruction *keyInst = keyPoint.inst;
-    if (!keyInst) continue; // Safety check
+        // Declare a local vector to accumulate AllocaVarPairs
+        std::vector<AllocaVarPair> allocaVarPairs;
+
+        Instruction *keyInst = keyPoint.inst;
+        if (!keyInst) continue; // Safety check
+
         std::string funcName = keyPoint.funcName;
+
         // Debug information
         errs() << "Analyzing Keypoint Instruction at Line:" << keyPoint.line << " in Function: "<< funcName << "\n";
         keyInst->print(llvm::errs());
@@ -86,14 +92,37 @@ void DataDependencyAnalysisPass::analyzeDependencies(Module &M, ModuleAnalysisMa
         // Traverse each operand of the keypoint instruction
         for (unsigned i = 0; i < keyInst->getNumOperands(); ++i) {
             Value* operand = keyInst->getOperand(i);
-            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited);
+            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited, &allocaVarPairs);
+        }
+
+        errs() << "\n AllocaPairs for KeyPoint:\n";
+        for (const auto &allocaEntry : allocaVarPairs) {
+            allocaEntry.allocaInst->print(llvm::errs());
+            errs() << "\n";
+            errs() << "   - with variable name: " << allocaEntry.varName << "\n";
         }
 
         errs() << "\n";
+
+        keyPointVariables[&keyPoint] = allocaVarPairs;
+    }
+
+    errs() << "Input Variables that influence program runtime:\n";
+
+    for (const auto &input : inputs) {
+        for (Value *operand : input.modifiedOperands) {
+            for (const auto &[keyPoint, allocaVarPairs] : keyPointVariables) {
+                for (const auto &allocaEntry : allocaVarPairs) {
+                    if (operand == allocaEntry.allocaInst) { // Match found
+                        errs() << "- Line " << input.line << ": " << allocaEntry.varName << " (KeyPoint at Line " << keyPoint->line << ", Type: " << keyPoint->type << ")\n";
+                    }
+                }
+            }
+        }
     }
 }
 
-void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnalysisManager &MAM, const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, int depth, int maxDepth) {
+void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnalysisManager &MAM, const std::unordered_map<std::string, dbgObj>& varNameAndScope, std::string funcName, Value* val, std::unordered_set<Value*> &visited, std::vector<AllocaVarPair>* allocaVarPairs, int depth, int maxDepth) {
     if (depth > maxDepth || !val || visited.find(val) != visited.end())
         return;
 
@@ -122,7 +151,7 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnaly
         errs() << "\n";
 
         // Check if the instruction is an AllocaInst
-        if (isa<AllocaInst>(defInst)) {
+        if (AllocaInst* allocaInst = dyn_cast<AllocaInst>(defInst)) {
             std::string printedStr;
             raw_string_ostream rso(printedStr);
             defInst->print(rso);
@@ -137,8 +166,15 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnaly
             for (const auto &entry : varNameAndScope) {
                 const dbgObj &obj = entry.second;
                 if (obj.ptrValue == printedStr && funcName == obj.funcName) {
+                    varName = obj.varName;
                     errs() << "       " << printedStr << " with variable name: " << obj.varName << "\n";
+                    break; // Found the variable name, no need to continue
                 }
+            }
+
+            // Add to the vector if the variable name is found
+            if (allocaVarPairs && !varName.empty()) {
+                allocaVarPairs->emplace_back(AllocaVarPair{allocaInst, varName});
             }
         }
 
@@ -152,9 +188,8 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnaly
                         if (StoreInst* storeInst = dyn_cast<StoreInst>(&I)) {
                             if (storeInst->getPointerOperand() == pointer) {
                                 Value* storedValue = storeInst->getValueOperand();
-                                // errs() << "       Dependency via Store Instruction:\n";
                                 // Recursively traverse the stored value
-                                printDefiningInstruction(M, MAM, varNameAndScope, funcName, storedValue, visited, depth + 1, maxDepth);
+                                printDefiningInstruction(M, MAM, varNameAndScope, funcName, storedValue, visited, allocaVarPairs, depth + 1, maxDepth);
                             }
                         }
                     }
@@ -165,7 +200,7 @@ void DataDependencyAnalysisPass::printDefiningInstruction(Module &M, ModuleAnaly
         // Recursively traverse the operands of the defining instruction
         for (unsigned i = 0; i < defInst->getNumOperands(); ++i) {
             Value* operand = defInst->getOperand(i);
-            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited, depth + 1, maxDepth);
+            printDefiningInstruction(M, MAM, varNameAndScope, funcName, operand, visited, allocaVarPairs, depth + 1, maxDepth);
         }
     }
 }

@@ -37,7 +37,19 @@ void InputAnalysisPass::analyzeModule(Module &M) {
                         if (DILocation *Loc = I.getDebugLoc()) {
                             line = Loc->getLine();
                         }
+
+                        // Collect operands modified by this input function
+                        std::vector<Value *> modifiedOperands;
+
+                        for (unsigned i = 0; i < CI->getNumOperands(); ++i) {
+                            Value *operand = CI->getOperand(i);
+                            if (operand->getType()->isPointerTy()) {
+                                modifiedOperands.push_back(operand); // Only include pointers
+                            }
+                        }
+
                         inputInstructions.emplace_back(line, funcName.str(), CI);
+                        inputInstructions.back().modifiedOperands = modifiedOperands;
                     }
                 }
             }
